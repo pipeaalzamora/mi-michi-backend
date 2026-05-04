@@ -48,8 +48,8 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok", "service": "mi-michi-backend"})
 	})
 
-	// ── Rutas protegidas ────────────────────────────────────────
-	api := r.Group("/api", middleware.Auth())
+	// ── Rutas protegidas (sin auth de momento — modo desarrollo) ──
+	api := r.Group("/api", middleware.DevAuth())
 	{
 		// Perfil
 		api.GET("/profile", profile.HandleGetProfile)
