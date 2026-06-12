@@ -9,6 +9,7 @@ import (
 // User representa un usuario en MongoDB.
 type User struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty"    json:"id"`
+	FirebaseUID string             `bson:"firebase_uid,omitempty" json:"firebase_uid,omitempty"`
 	GoogleID    string             `bson:"google_id"        json:"google_id"`
 	Email       string             `bson:"email"            json:"email"`
 	DisplayName string             `bson:"display_name"     json:"display_name"`

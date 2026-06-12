@@ -15,11 +15,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/mi-michi/backend/internal/middleware"
+	"github.com/mi-michi/backend/pkg/firebaseauth"
 	"github.com/mi-michi/backend/pkg/googleauth"
 )
 
 // GoogleLoginRequest recibe el id_token de Google desde Flutter móvil.
 type GoogleLoginRequest struct {
+	IDToken string `json:"id_token" binding:"required"`
+}
+
+type FirebaseLoginRequest struct {
 	IDToken string `json:"id_token" binding:"required"`
 }
 
@@ -57,6 +62,28 @@ func HandleGoogleLogin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": tokenStr, "user": user})
+}
+
+func HandleFirebaseLogin(c *gin.Context) {
+	var req FirebaseLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	payload, err := firebaseauth.Verify(c.Request.Context(), req.IDToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "token Firebase invalido"})
+		return
+	}
+
+	user, err := UpsertByFirebase(c.Request.Context(), payload.UID, payload.Email, payload.Name, payload.Picture)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al guardar usuario"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
 // HandleGoogleDesktopLogin — flujo desktop: intercambia authorization code por tokens.

@@ -7,9 +7,22 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mi-michi/backend/pkg/firebaseauth"
 )
 
 const UserIDKey = "userID"
+const FirebaseUIDKey = "firebaseUID"
+
+func Protected() gin.HandlerFunc {
+	switch strings.ToLower(os.Getenv("AUTH_MODE")) {
+	case "firebase":
+		return FirebaseAuth()
+	case "jwt":
+		return Auth()
+	default:
+		return DevAuth()
+	}
+}
 
 // Auth valida el JWT propio del backend (no el de Google).
 func Auth() gin.HandlerFunc {
@@ -22,6 +35,10 @@ func Auth() gin.HandlerFunc {
 
 		tokenStr := strings.TrimPrefix(header, "Bearer ")
 		secret := os.Getenv("JWT_SECRET")
+		if secret == "" {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "JWT_SECRET no configurado"})
+			return
+		}
 
 		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -48,6 +65,27 @@ func Auth() gin.HandlerFunc {
 		}
 
 		c.Set(UserIDKey, userID)
+		c.Next()
+	}
+}
+
+func FirebaseAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		header := c.GetHeader("Authorization")
+		if !strings.HasPrefix(header, "Bearer ") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token requerido"})
+			return
+		}
+
+		tokenStr := strings.TrimPrefix(header, "Bearer ")
+		payload, err := firebaseauth.Verify(c.Request.Context(), tokenStr)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token Firebase invalido"})
+			return
+		}
+
+		c.Set(UserIDKey, payload.UID)
+		c.Set(FirebaseUIDKey, payload.UID)
 		c.Next()
 	}
 }

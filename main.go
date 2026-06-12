@@ -42,14 +42,15 @@ func main() {
 	}))
 
 	// ── Rutas públicas ──────────────────────────────────────────
+	r.POST("/auth/firebase", profile.HandleFirebaseLogin)
 	r.POST("/auth/google", profile.HandleGoogleLogin)
 	r.POST("/auth/google/desktop", profile.HandleGoogleDesktopLogin)
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "mi-michi-backend"})
 	})
 
-	// ── Rutas protegidas (sin auth de momento — modo desarrollo) ──
-	api := r.Group("/api", middleware.DevAuth())
+	// ── Rutas protegidas ─────────────────────────────────────────
+	api := r.Group("/api", middleware.Protected())
 	{
 		// Perfil
 		api.GET("/profile", profile.HandleGetProfile)

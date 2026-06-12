@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"log"
+	"net/url"
 	"os"
 	"time"
 
@@ -37,7 +38,7 @@ func Connect() {
 
 	Client = client
 	Database = client.Database(dbName)
-	log.Printf("✅ MongoDB conectado: %s/%s", uri, dbName)
+	log.Printf("MongoDB conectado: %s/%s", redactedURI(uri), dbName)
 }
 
 func Col(name string) *mongo.Collection {
@@ -50,4 +51,15 @@ func Disconnect() {
 	if err := Client.Disconnect(ctx); err != nil {
 		log.Printf("MongoDB disconnect error: %v", err)
 	}
+}
+
+func redactedURI(uri string) string {
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		return "<uri invalida>"
+	}
+	if parsed.User != nil {
+		parsed.User = url.User("redacted")
+	}
+	return parsed.String()
 }

@@ -44,14 +44,52 @@ func UpsertByGoogle(ctx context.Context, googleID, email, name, picture string) 
 	return &user, nil
 }
 
+func UpsertByFirebase(ctx context.Context, firebaseUID, email, name, picture string) (*User, error) {
+	col := db.Col(collection)
+	now := time.Now()
+
+	filter := bson.M{"firebase_uid": firebaseUID}
+	update := bson.M{
+		"$set": bson.M{
+			"email":      email,
+			"picture":    picture,
+			"updated_at": now,
+		},
+		"$setOnInsert": bson.M{
+			"firebase_uid": firebaseUID,
+			"display_name": name,
+			"created_at":   now,
+		},
+	}
+	opts := options.FindOneAndUpdate().
+		SetUpsert(true).
+		SetReturnDocument(options.After)
+
+	var user User
+	err := col.FindOneAndUpdate(ctx, filter, update, opts).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 // GetByID devuelve un usuario por su ObjectID.
 func GetByID(ctx context.Context, id string) (*User, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return GetByFirebaseUID(ctx, id)
 	}
 	var user User
 	err = db.Col(collection).FindOne(ctx, bson.M{"_id": oid}).Decode(&user)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	return &user, err
+}
+
+func GetByFirebaseUID(ctx context.Context, firebaseUID string) (*User, error) {
+	var user User
+	err := db.Col(collection).FindOne(ctx, bson.M{"firebase_uid": firebaseUID}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
@@ -62,11 +100,19 @@ func GetByID(ctx context.Context, id string) (*User, error) {
 func UpdateDisplayName(ctx context.Context, id, displayName string) (*User, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return UpdateDisplayNameByFirebaseUID(ctx, id, displayName)
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	update := bson.M{"$set": bson.M{"display_name": displayName, "updated_at": time.Now()}}
 	var user User
 	err = db.Col(collection).FindOneAndUpdate(ctx, bson.M{"_id": oid}, update, opts).Decode(&user)
+	return &user, err
+}
+
+func UpdateDisplayNameByFirebaseUID(ctx context.Context, firebaseUID, displayName string) (*User, error) {
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	update := bson.M{"$set": bson.M{"display_name": displayName, "updated_at": time.Now()}}
+	var user User
+	err := db.Col(collection).FindOneAndUpdate(ctx, bson.M{"firebase_uid": firebaseUID}, update, opts).Decode(&user)
 	return &user, err
 }
