@@ -10,8 +10,10 @@ import (
 	"github.com/mi-michi/backend/internal/cats"
 	"github.com/mi-michi/backend/internal/db"
 	"github.com/mi-michi/backend/internal/health"
+	"github.com/mi-michi/backend/internal/integrations"
 	"github.com/mi-michi/backend/internal/middleware"
 	"github.com/mi-michi/backend/internal/notifications"
+	"github.com/mi-michi/backend/internal/photos"
 	"github.com/mi-michi/backend/internal/profile"
 	"github.com/mi-michi/backend/internal/vaccines"
 )
@@ -63,6 +65,9 @@ func main() {
 		api.PUT("/cats/:id", cats.HandleUpdate)
 		api.DELETE("/cats/:id", cats.HandleDelete)
 		api.POST("/cats/:id/photo", cats.HandleUploadPhoto)
+		api.GET("/cats/:id/photos", photos.HandleList)
+		api.POST("/cats/:id/photos", photos.HandleUpload)
+		api.DELETE("/cats/:id/photos/:photoId", photos.HandleDelete)
 
 		// Salud
 		api.GET("/cats/:id/health", health.HandleList)
@@ -75,6 +80,15 @@ func main() {
 		api.POST("/cats/:id/vaccines", vaccines.HandleCreate)
 		api.PUT("/cats/:id/vaccines/:vacId", vaccines.HandleUpdate)
 		api.DELETE("/cats/:id/vaccines/:vacId", vaccines.HandleDelete)
+
+		// Integraciones externas
+		api.GET("/integrations/cat-breeds", integrations.HandleCatBreeds)
+		api.GET("/integrations/cat-breeds/:id/images", integrations.HandleCatBreedImages)
+		api.GET("/integrations/cat-fact", integrations.HandleCatFact)
+		api.GET("/integrations/cat-image", integrations.HandleCatImage)
+		api.GET("/integrations/food-products", integrations.HandleFoodSearch)
+		api.GET("/integrations/food-products/:barcode", integrations.HandleFoodProduct)
+		api.GET("/integrations/adoptions/cats", integrations.HandleAdoptions)
 	}
 
 	port := os.Getenv("PORT")

@@ -24,6 +24,7 @@ type Cat struct {
 	Color     *string            `bson:"color"         json:"color"`
 	WeightKg  *float64           `bson:"weight_kg"     json:"weight_kg"`
 	PhotoURL  *string            `bson:"photo_url"     json:"photo_url"`
+	PhotoKey  *string            `bson:"photo_key"     json:"-"`
 	Notes     *string            `bson:"notes"         json:"notes"`
 	CreatedAt time.Time          `bson:"created_at"    json:"created_at"`
 	UpdatedAt time.Time          `bson:"updated_at"    json:"updated_at"`

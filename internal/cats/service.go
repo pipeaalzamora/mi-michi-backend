@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mi-michi/backend/internal/db"
+	"github.com/mi-michi/backend/internal/storage"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,6 +30,7 @@ func List(ctx context.Context, userID string) ([]Cat, error) {
 	if cats == nil {
 		cats = []Cat{}
 	}
+	hydratePhotoURLs(ctx, cats)
 	return cats, nil
 }
 
@@ -68,6 +70,7 @@ func GetByID(ctx context.Context, id, userID string) (*Cat, error) {
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
+	hydratePhotoURL(ctx, &cat)
 	return &cat, err
 }
 
@@ -88,7 +91,6 @@ func Update(ctx context.Context, id, userID string, req UpdateCatRequest) (*Cat,
 		"color":      req.Color,
 		"weight_kg":  req.WeightKg,
 		"notes":      req.Notes,
-		"photo_url":  req.PhotoURL,
 		"updated_at": time.Now(),
 	}}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
@@ -97,21 +99,26 @@ func Update(ctx context.Context, id, userID string, req UpdateCatRequest) (*Cat,
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
+	hydratePhotoURL(ctx, &cat)
 	return &cat, err
 }
 
-func UpdatePhoto(ctx context.Context, id, userID, photoURL string) (*Cat, error) {
+func UpdatePhoto(ctx context.Context, id, userID, photoKey string) (*Cat, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.New("id inválido")
 	}
-	update := bson.M{"$set": bson.M{"photo_url": photoURL, "updated_at": time.Now()}}
+	update := bson.M{
+		"$set":   bson.M{"photo_key": photoKey, "updated_at": time.Now()},
+		"$unset": bson.M{"photo_url": ""},
+	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var cat Cat
 	err = db.Col(collection).FindOneAndUpdate(ctx, bson.M{"_id": oid, "user_id": userID}, update, opts).Decode(&cat)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
+	hydratePhotoURL(ctx, &cat)
 	return &cat, err
 }
 
@@ -128,4 +135,21 @@ func Delete(ctx context.Context, id, userID string) error {
 		return errors.New("gato no encontrado")
 	}
 	return nil
+}
+
+func hydratePhotoURLs(ctx context.Context, cats []Cat) {
+	for i := range cats {
+		hydratePhotoURL(ctx, &cats[i])
+	}
+}
+
+func hydratePhotoURL(ctx context.Context, cat *Cat) {
+	if cat == nil || cat.PhotoKey == nil || *cat.PhotoKey == "" {
+		return
+	}
+	url, err := storage.PresignCatPhoto(ctx, *cat.PhotoKey, 6*time.Hour)
+	if err != nil {
+		return
+	}
+	cat.PhotoURL = &url
 }

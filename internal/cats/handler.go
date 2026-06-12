@@ -94,13 +94,13 @@ func HandleUploadPhoto(c *gin.Context) {
 	}
 	defer file.Close()
 
-	url, err := storage.UploadCatPhoto(c.Request.Context(), userID, catID, header.Filename, file)
+	photoKey, err := storage.UploadCatPhoto(c.Request.Context(), userID, catID, header.Filename, file)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	updated, err := UpdatePhoto(c.Request.Context(), catID, userID, url)
+	updated, err := UpdatePhoto(c.Request.Context(), catID, userID, photoKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
