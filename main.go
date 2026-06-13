@@ -86,6 +86,7 @@ func main() {
 		api.GET("/integrations/cat-breeds/:id/images", integrations.HandleCatBreedImages)
 		api.GET("/integrations/cat-fact", integrations.HandleCatFact)
 		api.GET("/integrations/cat-image", integrations.HandleCatImage)
+		api.GET("/integrations/care-tips", integrations.HandleCareTips)
 		api.GET("/integrations/food-products", integrations.HandleFoodSearch)
 		api.GET("/integrations/food-products/:barcode", integrations.HandleFoodProduct)
 		api.GET("/integrations/adoptions/cats", integrations.HandleAdoptions)

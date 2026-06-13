@@ -44,6 +44,20 @@ func HandleCatImage(c *gin.Context) {
 	c.JSON(http.StatusOK, image)
 }
 
+func HandleCareTips(c *gin.Context) {
+	tips, err := SearchCareTips(
+		c.Request.Context(),
+		c.Query("q"),
+		c.Query("category"),
+		parseLimit(c.DefaultQuery("limit", "20")),
+	)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, tips)
+}
+
 func HandleFoodProduct(c *gin.Context) {
 	product, err := GetFoodProduct(c.Request.Context(), c.Param("barcode"))
 	if err != nil {

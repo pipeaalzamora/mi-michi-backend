@@ -117,9 +117,10 @@ func newS3Client(ctx context.Context) (*s3.Client, error) {
 	optFns := []func(*config.LoadOptions) error{config.WithRegion(region)}
 	accessKey := firstEnv("S3_ACCESS_KEY", "AWS_ACCESS_KEY_ID")
 	secretKey := firstEnv("S3_SECRET_KEY", "AWS_SECRET_ACCESS_KEY")
+	sessionToken := firstEnv("S3_SESSION_TOKEN", "AWS_SESSION_TOKEN")
 	if accessKey != "" && secretKey != "" {
 		optFns = append(optFns, config.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
+			credentials.NewStaticCredentialsProvider(accessKey, secretKey, sessionToken),
 		))
 	}
 

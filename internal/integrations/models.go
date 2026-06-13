@@ -38,6 +38,15 @@ type CatFact struct {
 	Length int    `json:"length"`
 }
 
+type CareTip struct {
+	ID       string `json:"id"`
+	Category string `json:"category"`
+	Emoji    string `json:"emoji"`
+	Title    string `json:"title"`
+	Text     string `json:"text"`
+	Source   string `json:"source"`
+}
+
 type CataasImage struct {
 	ID       string   `json:"id"`
 	Tags     []string `json:"tags"`
